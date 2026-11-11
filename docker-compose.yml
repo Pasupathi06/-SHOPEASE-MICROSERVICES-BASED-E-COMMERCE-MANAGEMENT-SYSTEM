@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # 1. User Service MySQL 8 Database
+  user-db:
+    image: mysql:8.0
+    container_name: shopease-user-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: shopease_user_db
+      MYSQL_USER: pasu
+      MYSQL_PASSWORD: pasupathi@123
+      MYSQL_ROOT_PASSWORD: pasupathi@123
+    ports:
+      - "3308:3306"
+    volumes:
+      - user_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppasupathi@123"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - shopease-network
+
+  # 2. User Management FastAPI Microservice
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopease-user-container
+    restart: always
+    ports:
+      - "8002:8002"
+    environment:
+      - PROJECT_NAME=ShopEase User Service
+      - PORT=8002
+      - HOST=0.0.0.0
+      - MYSQL_HOST=user-db
+      - MYSQL_PORT=3306
+      - MYSQL_USER=pasu
+      - MYSQL_PASSWORD=pasupathi@123
+      - MYSQL_DATABASE=shopease_user_db
+      - DATABASE_URL=mysql+pymysql://pasu:pasupathi%40123@user-db:3306/shopease_user_db
+      - JWT_SECRET_KEY=shopease_jwt_super_secret_key_pasupathi_2026_secure_hash_key_123
+      - JWT_ALGORITHM=HS256
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - shopease-network
+
+volumes:
+  user_db_data:
+    driver: local
+
+networks:
+  shopease-network:
+    driver: bridge
