@@ -1,0 +1,56 @@
+"""
+Core Application Configuration for Product Catalog Service.
+Loads environment variables and provides centralized application settings.
+"""
+
+import os
+from urllib.parse import quote_plus
+from pydantic import BaseModel
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
+
+
+class Settings(BaseModel):
+    """Product Catalog Microservice Settings."""
+    PROJECT_NAME: str = os.getenv("PROJECT_NAME", "ShopEase Product Catalog Service")
+    PROJECT_VERSION: str = os.getenv("PROJECT_VERSION", "1.0.0")
+    DESCRIPTION: str = os.getenv(
+        "DESCRIPTION",
+        "Independent Product Catalog & Inventory Microservice with Category, Search, and Stock Management for ShopEase."
+    )
+    HOST: str = os.getenv("HOST", "0.0.0.0")
+    PORT: int = int(os.getenv("PORT", "8004"))
+    DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
+
+    # API Prefix
+    API_PREFIX: str = os.getenv("API_PREFIX", "/api")
+
+    # JWT Configuration (Shared with Authentication Service)
+    JWT_SECRET_KEY: str = os.getenv(
+        "JWT_SECRET_KEY",
+        "shopease_jwt_super_secret_key_pasupathi_2026_secure_hash_key_123"
+    )
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+
+    # Database Configuration
+    MYSQL_HOST: str = os.getenv("MYSQL_HOST", "localhost")
+    MYSQL_PORT: int = int(os.getenv("MYSQL_PORT", "3306"))
+    MYSQL_USER: str = os.getenv("MYSQL_USER", "pasu")
+    MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "pasupathi@123")
+    MYSQL_DATABASE: str = os.getenv("MYSQL_DATABASE", "shopease_product_catalog_db")
+
+    # Low Stock Threshold Default
+    DEFAULT_LOW_STOCK_THRESHOLD: int = int(os.getenv("DEFAULT_LOW_STOCK_THRESHOLD", "10"))
+
+    @property
+    def DATABASE_URL(self) -> str:
+        custom_url = os.getenv("DATABASE_URL")
+        if custom_url:
+            return custom_url
+        encoded_password = quote_plus(self.MYSQL_PASSWORD)
+        return f"mysql+pymysql://{self.MYSQL_USER}:{encoded_password}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+
+
+settings = Settings()
